@@ -364,13 +364,14 @@ where
     fn set_mode_no_wake(&mut self, mode: OpMode) -> Result<(), SPIE, CSE> {
         self.modify_register(CanCtrl::new().with_reqop(mode), CanCtrl::MASK_REQOP)?;
 
-        // Wait until status register updates with new mode. We retry 20 times, if it
+        // Wait until status register updates with new mode. We retry up to 100ms, if it
         // hasn't updated by then fail.
-        for _ in 0..20 {
+        for _ in 0..50 {
             let canstat: CanStat = self.read_register()?;
             if canstat.opmod_or_err() == Ok(mode) {
                 return Ok(());
             }
+            self.delay.delay_ms(2);
         }
 
         Err(Error::NewModeTimeout)
